@@ -5,4 +5,5 @@ pytesseract == 0.3.13
 bs4 == 0.0.2
 python-docx == 1.2.0
 python-dotenv == 1.2.1
-PyMuPDF-1.26.6
+PyMuPDF==1.26.6
+markdown==3.10
