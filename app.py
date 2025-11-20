@@ -8,8 +8,6 @@ from docx import Document
 from docx.shared import Pt
 import fitz  # PyMuPDF
 from PIL import Image
-import pytesseract
-import docx
 import markdown
 from bs4 import BeautifulSoup
 from collections import deque
@@ -20,7 +18,7 @@ app = Flask(__name__)
 load_dotenv()
 groq_api_key = os.getenv("GROQ_API_KEY")
 
-http_client = httpx.Client(verify=False)
+http_client = httpx.Client()
 client = Groq(api_key=groq_api_key, http_client=http_client)
 
 # Conversation buffer (last 5 interactions)
@@ -34,7 +32,7 @@ uploaded_document = {"content": None, "filename": None}
 
 
 # --------------------------
-# Extract PDF content
+# Extract PDF content (NO OCR)
 # --------------------------
 def extract_pdf_content(pdf_bytes):
     all_text = []
@@ -42,20 +40,9 @@ def extract_pdf_content(pdf_bytes):
 
     for p in range(len(pdf)):
         page = pdf[p]
-
         text = page.get_text().strip()
         if text:
             all_text.append(text)
-
-        # OCR for images
-        for idx, img in enumerate(page.get_images(full=True)):
-            xref = img[0]
-            base = pdf.extract_image(xref)
-            img_bytes = base["image"]
-            pil_img = Image.open(io.BytesIO(img_bytes))
-            ocr_text = pytesseract.image_to_string(pil_img)
-            if ocr_text.strip():
-                all_text.append(ocr_text)
 
     pdf.close()
     return "\n\n".join(all_text)
@@ -66,7 +53,7 @@ def extract_pdf_content(pdf_bytes):
 # --------------------------
 def extract_docx_content(file_bytes):
     file_stream = io.BytesIO(file_bytes)
-    doc = docx.Document(file_stream)
+    doc = Document(file_stream)
     return "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
 
 
@@ -218,9 +205,9 @@ def download_essay():
     )
 
 
-import os
-
+# --------------------------
+# RUN FLASK ON RAILWAY
+# --------------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     app.run(host="0.0.0.0", port=port)
-
